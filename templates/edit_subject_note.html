@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Edit note - {{ subject.name }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 780px;">
+  <header>
+    <h1 style="display:inline-block">Edit note</h1>
+    <span class="pill" data-bg="{{ subject.color_tag or '#ffd8b5' }}" style="margin-left:8px;">{{ subject.name }}</span>
+  </header>
+
+  <div style="margin-top:18px;">
+  <form method="POST">
+    <label for="title">Note title *</label>
+    <input id="title" name="title" type="text" required value="{{ note.title }}">
+
+    <label for="content">Class notes</label>
+    <textarea id="content" name="content" rows="14">{{ note.content }}</textarea>
+
+    <div class="note-actions">
+      <button type="submit" class="btn btn-primary">Save changes</button>
+      <a class="btn link-cancel" href="{{ url_for('subject_detail', subject_id=subject.id) }}">Cancel</a>
+
+      <button type="submit" form="delete-note-form" class="btn btn-danger btn-icon btn-icon-lg note-delete" title="Delete" onclick="return confirm('Delete this note?');">🗑️</button>
+    </div>
+  </form>
+
+  <form id="delete-note-form" method="POST" action="{{ url_for('delete_subject_note', note_id=note.id) }}" style="display:none;"></form>
+  </div>
+</div>
+
+<style>
+  .note-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .note-delete {
+    margin-left: auto;
+  }
+
+  /* Make the delete button align nicely on small screens too */
+  @media (max-width: 520px) {
+    .note-actions .note-delete {
+      margin-left: 0 !important;
+      width: 100%;
+    }
+
+    .note-actions .note-delete {
+      width: 100%;
+    }
+  }
+</style>
+
+<style>
+  .btn-icon {
+    min-width: 38px;
+    padding: 6px 8px;
+    line-height: 1;
+    border-radius: 999px;
+  }
+
+  /* Slightly larger icon button for the delete action on this page */
+  .btn-icon-lg {
+    min-width: 44px;
+    padding: 8px 10px;
+    font-size: 1.1rem;
+  }
+
+  /* Force red styling for the trash icon button */
+  .btn.btn-danger.btn-icon {
+    background: #ffb3ba;
+    color: #8b3b4b;
+    border: none;
+  }
+</style>
+
+<script>
+  document.querySelectorAll('[data-bg]').forEach(el => {
+    el.style.backgroundColor = el.getAttribute('data-bg');
+  });
+</script>
+{% endblock %}

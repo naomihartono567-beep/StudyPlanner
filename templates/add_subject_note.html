@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Add note - {{ subject.name }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 780px;">
+  <header>
+    <h1 style="display:inline-block">Add note</h1>
+    <span class="pill" data-bg="{{ subject.color_tag or '#ffd8b5' }}" style="margin-left:8px;">{{ subject.name }}</span>
+  </header>
+
+  <form method="POST" style="margin-top:18px;">
+    <label for="title">Note title *</label>
+    <input id="title" name="title" type="text" required placeholder="e.g., Chapter 3 Lecture, Midterm Review, Homework Tips" value="{{ form.title if form is defined else '' }}">
+
+    <label for="content">Class notes</label>
+    <textarea id="content" name="content" rows="14" placeholder="Write your notes here...">{{ form.content if form is defined else '' }}</textarea>
+
+    <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+      <button type="submit" class="btn btn-primary">Save note</button>
+      <a class="btn link-cancel" href="{{ url_for('subject_detail', subject_id=subject.id) }}">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.querySelectorAll('[data-bg]').forEach(el => {
+    el.style.backgroundColor = el.getAttribute('data-bg');
+  });
+</script>
+{% endblock %}

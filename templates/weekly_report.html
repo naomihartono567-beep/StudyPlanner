@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="report-header">
+    <h2>📈 Weekly Report</h2>
+    <p class="report-period">Last Week: {{ report_period.start_date }} - {{ report_period.end_date }}</p>
+  </div>
+
+  <section class="weekly-summary-section">
+    <h3>📊 Last Week's Summary</h3>
+    <div class="stats-grid">
+      <div class="stat-box completed-stat">
+        <p class="stat-number">{{ weekly_summary.completed_count }}</p>
+        <p class="stat-label">Completed</p>
+      </div>
+      <div class="stat-box pending-stat">
+        <p class="stat-number">{{ weekly_summary.pending_count }}</p>
+        <p class="stat-label">Pending</p>
+      </div>
+      <div class="stat-box missed-stat">
+        <p class="stat-number">{{ weekly_summary.missed_count }}</p>
+        <p class="stat-label">Missed</p>
+      </div>
+      <div class="stat-box rate-stat">
+        <p class="stat-number">{{ weekly_summary.completion_rate }}<span class="percent">%</span></p>
+        <p class="stat-label">Completion Rate</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="report-section completed-section">
+    <h3>✅ Completed Tasks ({{ weekly_summary.completed_count }})</h3>
+    {% if completed_tasks %}
+      <div class="tasks-list">
+        {% for task in completed_tasks %}
+          <div class="report-task-item completed">
+            <div class="task-info">
+              <p class="task-name">{{ task.name }}</p>
+              <p class="task-meta">📚 {{ task.subject }}</p>
+            </div>
+            <span class="status-badge">✓ Done</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No completed tasks this week</p>
+    {% endif %}
+  </section>
+
+  <section class="report-section pending-section">
+    <h3>⏳ Pending Tasks ({{ weekly_summary.pending_count }})</h3>
+    {% if pending_tasks %}
+      <div class="tasks-list">
+        {% for task in pending_tasks %}
+          <div class="report-task-item pending">
+            <div class="task-info">
+              <p class="task-name">{{ task.name }}</p>
+              <p class="task-meta">📅 Due: {{ task.due_date }} | 📚 {{ task.subject }}</p>
+            </div>
+            <span class="status-badge">In Progress</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No pending tasks this week</p>
+    {% endif %}
+  </section>
+
+  <section class="report-section missed-section">
+    <h3>❌ Missed Tasks ({{ weekly_summary.missed_count }})</h3>
+    {% if missed_tasks %}
+      <div class="tasks-list">
+        {% for task in missed_tasks %}
+          <div class="report-task-item missed">
+            <div class="task-info">
+              <p class="task-name">{{ task.name }}</p>
+              <p class="task-meta">⚠️ Was Due: {{ task.due_date }} | 📚 {{ task.subject }}</p>
+            </div>
+            <span class="status-badge">✗ Missed</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No missed tasks this week 🎉</p>
+    {% endif %}
+  </section>
+
+  <div class="action-section">
+    <a href="{{ url_for('weekly_progress_view') }}" class="btn btn-secondary">← Back to Progress</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="schedule-container">
+  <div class="schedule-header">
+    <h2>📅 Calendar</h2>
+    <div class="month-nav">
+      <button class="nav-btn" id="prev-month">← Previous</button>
+      <span class="month-display" id="month-display">November 2025</span>
+      <button class="nav-btn" id="next-month">Next →</button>
+    </div>
+  </div>
+
+  <!-- Calendar Grid -->
+  <div class="calendar-section">
+    <div class="calendar-grid">
+      <!-- Day headers (Sun-Sat) -->
+      <div class="calendar-header">
+        <div class="day-header">Sunday</div>
+        <div class="day-header">Monday</div>
+        <div class="day-header">Tuesday</div>
+        <div class="day-header">Wednesday</div>
+        <div class="day-header">Thursday</div>
+        <div class="day-header">Friday</div>
+        <div class="day-header">Saturday</div>
+      </div>
+
+      <!-- Date boxes (7 columns = 1 week) -->
+      <div class="calendar-body" id="calendar-body">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions Bar -->
+  <div class="action-bar">
+  <a href="{{ url_for('add_task') }}" class="btn btn-action btn-task">+ Add Task</a>
+  <a href="{{ url_for('add_activity') }}" class="btn btn-action btn-activity">📌 Add Activity</a>
+  </div>
+
+  <!-- Tasks List Panel -->
+  <section class="tasks-panel" id="tasks-panel" data-blocks='{{ blocks_json }}'>
+    <div class="tasks-header">
+      <h3>📋 All Tasks & Activities</h3>
+      <div class="filter-controls">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="fixed">📌 Activities Only</button>
+        <button class="filter-btn" data-filter="flexible">⏱️ Tasks Only</button>
+      </div>
+    </div>
+
+    {% if blocks %}
+      <div class="tasks-list" id="tasks-list">
+        {% for block in blocks %}
+          <div class="task-block" data-type="{% if block.is_fixed %}fixed{% else %}flexible{% endif %}">
+            <div class="task-details">
+              <p class="task-name">{{ block.activity_name }}</p>
+              {% if (not block.is_fixed) and block.due_date %}
+                <p class="task-time">📅 Due: {{ block.due_date }}</p>
+              {% endif %}
+              {% if block.day_of_week and block.time_range %}
+                {# Recurring activity - show day and time only #}
+                <p class="task-time">
+                  📅 Every {% if block.recurrence_pattern == 'biweekly' %}other {% endif %}{{ block.day_of_week }} at {{ block.time_range }}
+                </p>
+              {% elif block.time_slots %}
+                <div class="task-times">
+                  {% for time_slot in block.time_slots %}
+                    <p class="task-time">📍 {{ time_slot }}</p>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="task-time">
+                  📍 {{ block.start_time }} → {{ block.end_time }}
+                </p>
+              {% endif %}
+              <span class="task-type-badge">
+                {% if block.is_fixed %}📌 Activity{% else %}⏱️ Task{% endif %}
+              </span>
+              {% if block.is_recurring %}
+                {% if block.recurrence_pattern == 'weekly' %}
+                  <span class="task-type-badge" style="background-color: #a8dadc; margin-left: 4px;" title="Repeats every week">🔄 Weekly</span>
+                {% elif block.recurrence_pattern == 'biweekly' %}
+                  <span class="task-type-badge" style="background-color: #b8c5d6; margin-left: 4px;" title="Repeats every 2 weeks">🔄 Biweekly</span>
+                {% else %}
+                  <span class="task-type-badge" style="background-color: #a8dadc; margin-left: 4px;" title="Recurring activity">🔄 Recurring</span>
+                {% endif %}
+              {% endif %}
+            </div>
+            <div class="task-actions">
+              {% if block.task_id %}
+                <!-- Completion checkbox: posts to complete_task route -->
+                <label style="display:inline-flex; align-items:center; gap:8px;">
+                  <input type="checkbox" class="complete-checkbox" 
+                         data-task-id="{{ block.task_id }}"
+                         data-is-recurring="{{ block.is_recurring }}">
+                  <span title="Mark task complete">Done</span>
+                </label>
+                <!-- Edit task button -->
+                <a href="{{ url_for('edit_task', task_id=block.task_id) }}" class="action-btn edit-btn" title="Edit task">✎</a>
+              {% elif block.is_fixed %}
+                <!-- Edit activity button (only for fixed/activity blocks without task_id) -->
+                <a href="{{ url_for('edit_schedule_block', block_id=block.id) }}" class="action-btn edit-btn" title="Edit activity">✎</a>
+              {% endif %}
+              <button class="action-btn delete-btn" 
+                      data-id="{{ block.id }}"
+                      data-is-recurring="{{ block.is_recurring }}"
+                      data-recurrence-pattern="{{ block.recurrence_pattern }}"
+                      data-activity-name="{{ block.activity_name }}">✕</button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+        {% else %}
+      <div class="empty-state">
+        <p>📭 No schedule blocks yet. <a href="{{ url_for('add_task') }}">Start by adding a task</a> or <a href="{{ url_for('add_activity') }}">scheduling an activity</a>.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+
+<style>
+  .schedule-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 3px dashed rgba(0,0,0,0.1);
+  }
+
+  .schedule-header h2 {
+    margin: 0;
+    color: #4b3b6b;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .nav-btn {
+    padding: 8px 15px;
+    background: #e3e6ff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    color: #5a4a6b;
+    box-shadow: 0 2px 6px rgba(195, 201, 255, 0.3);
+  }
+
+  .nav-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(195, 201, 255, 0.25);
+  }
+
+  .month-display {
+    font-weight: bold;
+    color: #5a4a6b;
+    min-width: 150px;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+
+  /* Calendar Grid Styling */
+  .calendar-section {
+    background: rgba(255,255,255,0.6);
+    border-radius: 15px;
+    padding: 20px;
+    border: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .calendar-grid {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .day-header {
+    text-align: center;
+    font-weight: bold;
+    color: #5a4a6b;
+    padding: 12px;
+    background: #e3e6ff;
+    border: 2px solid #c9d0ff;
+    border-radius: 10px;
+    font-size: 0.95rem;
+  }
+
+  .calendar-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    min-height: 400px;
+  }
+
+  .calendar-day {
+    background: linear-gradient(135deg, rgba(189, 224, 254, 0.3), rgba(216, 243, 220, 0.3));
+    border: 2px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 10px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .calendar-day.other-month {
+    background: rgba(0,0,0,0.02);
+    opacity: 0.5;
+  }
+
+  .calendar-day.today {
+    /* Make today's highlight more blue than green */
+    border: 3px solid var(--pastel-blue);
+    background: linear-gradient(135deg, rgba(189, 224, 254, 0.6), rgba(233, 213, 255, 0.3));
+  }
+
+  .date-number {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #5a4a6b;
+    margin-bottom: 8px;
+  }
+
+  .day-activities {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .activity-badge {
+    /* Default = task badge (green) */
+    background: linear-gradient(135deg, var(--pastel-green), #c8edcf);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 3px solid #9fd8b6;
+  }
+
+  .activity-badge.fixed {
+    background: var(--pastel-blue);
+    border-left-color: #0066cc;
+    color: #003366;
+  }
+
+  /* Action Bar */
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 15px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 12px;
+    border: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .btn-action {
+    padding: 12px 18px;
+    background: transparent;
+    color: #2b2b2b;
+    border: none;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  }
+
+  /* specific styles for task/activity action buttons */
+  .btn-task {
+    background: linear-gradient(135deg, var(--pastel-green), #c8edcf);
+    border: 2px solid #9fd8b6;
+    color: #165a2d;
+  }
+
+  .btn-activity {
+    background: linear-gradient(135deg, var(--pastel-blue), #d0e9ff);
+    border: 2px solid #6aa3e6;
+    color: #08345d;
+  }
+
+  .btn-task:hover, .btn-activity:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.14);
+  }
+
+  /* Tasks Panel */
+  .tasks-panel {
+    background: rgba(255,255,255,0.5);
+    border-radius: 15px;
+    padding: 20px;
+    border: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px dashed rgba(0,0,0,0.1);
+  }
+
+  .tasks-header h3 {
+    margin: 0;
+    color: #4b3b6b;
+  }
+
+  .filter-controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .filter-btn {
+    padding: 8px 14px;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    color:var(--text-primary);
+  }
+
+  .filter-btn.active {
+    background:var(--accent);
+    color: white;
+    border-color:var(--accent);
+  }
+
+  .filter-btn:hover {
+    border-color:var(--accent);
+    background:linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(52, 152, 219, 0.02));
+  }
+
+  .tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .task-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: var(--pastel-green);
+    border-radius: 12px;
+    border-left: 4px solid #9fd8b6;
+    transition: all 0.18s ease;
+  }
+
+  .task-block[data-type="fixed"] {
+    background: var(--pastel-blue);
+    border-left-color: #0066cc;
+  }
+
+  .task-block:hover {
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    transform: translateY(-3px);
+  }
+
+  .task-details {
+    flex: 1;
+  }
+
+  .task-name {
+    margin: 0;
+    font-weight: bold;
+    color: #3f3f3f;
+    font-size: 1.05rem;
+  }
+
+  .task-times {
+    margin: 6px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .task-time {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .task-type-badge {
+    display: inline-block;
+    background: rgba(0,0,0,0.1);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-top: 8px;
+  }
+
+  .task-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-btn {
+    padding: 8px 12px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    color: #5a4a6b;
+  }
+
+  .edit-btn {
+    color: #5a7abf;
+  }
+
+  .edit-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 20px rgba(90,122,191,0.12);
+  }
+
+  .delete-btn {
+    color: #d4556b;
+    font-size: 1.1rem;
+  }
+
+  .delete-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 20px rgba(212,85,107,0.12);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #8a7c9e;
+  }
+
+  .empty-state a {
+    color: #7a8fc7;
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .empty-state a:hover {
+    text-decoration: underline;
+  }
+
+  /* Hide task blocks based on filter */
+  .tasks-list.filter-fixed .task-block[data-type="flexible"] {
+    display: none;
+  }
+
+  .tasks-list.filter-flexible .task-block[data-type="fixed"] {
+    display: none;
+  }
+</style>
+
+<script>
+  // Initialize calendar
+  const calendar = document.getElementById('calendar-body');
+  const monthDisplay = document.getElementById('month-display');
+  const tasksPanel = document.getElementById('tasks-panel');
+  let currentDate = new Date();
+
+  // Parse blocks from data attribute
+  let blocksData = {};
+  try {
+    const blocksJson = tasksPanel.getAttribute('data-blocks');
+    blocksData = blocksJson ? JSON.parse(blocksJson) : {};
+  } catch (e) {
+    console.log('No blocks data found');
+  }
+
+  function renderCalendar() {
+    calendar.innerHTML = '';
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Get first day and number of days in month
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    // Month display
+    monthDisplay.textContent = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    let date = 1;
+    let nextMonthDate = 1;
+
+    for (let i = 0; i < 42; i++) {
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'calendar-day';
+
+      if (i < firstDay) {
+        // Previous month
+        dayDiv.className += ' other-month';
+        dayDiv.innerHTML = `<div class="date-number">${daysInPrevMonth - firstDay + i + 1}</div>`;
+      } else if (date <= daysInMonth) {
+        // Current month
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+        const today = new Date();
+        if (year === today.getFullYear() && month === today.getMonth() && date === today.getDate()) {
+          dayDiv.className += ' today';
+        }
+
+        let html = `<div class="date-number">${date}</div><div class="day-activities">`;
+        
+        if (blocksData[dateStr]) {
+          blocksData[dateStr].forEach(activity => {
+            const badgeClass = activity.fixed ? 'fixed' : '';
+            html += `<div class="activity-badge ${badgeClass}">${activity.name}</div>`;
+          });
+        }
+
+        html += '</div>';
+        dayDiv.innerHTML = html;
+        date++;
+      } else {
+        // Next month
+        dayDiv.className += ' other-month';
+        dayDiv.innerHTML = `<div class="date-number">${nextMonthDate}</div>`;
+        nextMonthDate++;
+      }
+
+      calendar.appendChild(dayDiv);
+    }
+  }
+
+  // Event listeners for navigation
+  document.getElementById('prev-month').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  });
+
+  document.getElementById('next-month').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+  });
+
+  // Filter controls
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      const tasksList = document.getElementById('tasks-list');
+      if (!tasksList) return;
+      
+      tasksList.classList.remove('filter-all', 'filter-fixed', 'filter-flexible');
+      
+      const filter = this.dataset.filter;
+      if (filter !== 'all') {
+        tasksList.classList.add(`filter-${filter}`);
+      }
+    });
+  });
+
+  // Delete button functionality
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      const isRecurring = this.getAttribute('data-is-recurring') === 'True';
+      const pattern = this.getAttribute('data-recurrence-pattern');
+      const activityName = this.getAttribute('data-activity-name');
+      
+      if (isRecurring && (pattern === 'weekly' || pattern === 'biweekly')) {
+        // Ask which deletion option they want
+        const userChoice = prompt(
+          `Delete "${activityName}" (${pattern} recurring activity)\n\n` +
+          `Type one of the following:\n` +
+          `  "all" - Delete ALL occurrences of this activity\n` +
+          `  "one" - Delete only THIS specific occurrence\n` +
+          `  "cancel" - Don't delete anything`,
+          "cancel"
+        );
+        
+        if (!userChoice || userChoice.toLowerCase() === 'cancel') {
+          // User cancelled, don't do anything
+          return;
+        }
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        
+        if (userChoice.toLowerCase() === 'all') {
+          // Delete all occurrences
+          form.action = `/schedule_block/${id}/delete_all_recurring`;
+        } else if (userChoice.toLowerCase() === 'one') {
+          // Delete just this one
+          form.action = `/schedule_block/${id}/delete`;
+        } else {
+          alert('Invalid choice. Please type "all", "one", or "cancel".');
+          return;
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+      } else {
+        // Non-recurring - just confirm and delete
+        if (confirm('Delete this schedule block?')) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = `/schedule_block/${id}/delete`;
+          document.body.appendChild(form);
+          form.submit();
+        }
+      }
+    });
+  });
+
+  // Completion checkbox functionality: POST to complete_task/<task_id>
+  document.querySelectorAll('.complete-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const checked = this.checked;
+      const taskId = this.getAttribute('data-task-id');
+      const isRecurring = this.getAttribute('data-is-recurring') === 'True';
+      if (!taskId) return;
+      if (checked) {
+        let confirmMsg;
+        if (isRecurring) {
+          confirmMsg = '🔄 This is a weekly recurring task. Completing it will reset the due date to next week. Continue?';
+        } else {
+          confirmMsg = 'Mark this task as complete? This will trigger dynamic rescheduling.';
+        }
+        if (!confirm(confirmMsg)) {
+          this.checked = false;
+          return;
+        }
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/complete_task/${taskId}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+
+  // Initial render
+  renderCalendar();
+</script>
+{% endblock %}

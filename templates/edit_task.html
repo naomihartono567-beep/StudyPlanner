@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Task</h2>
+<form method="post">
+  <label>Task name <input name="task_name" value="{{ (form.get('task_name') if form else task['name']) }}" required></label><br>
+  <label>Subject
+    <select name="subject_id">
+      <option value="">— No subject —</option>
+      {% for s in subjects %}
+        {% if (form and (form.get('subject_id')|string) == (s['id']|string)) or ((not form) and s['id'] == task['subject_id']) %}
+          <option value="{{ s['id'] }}" selected>{{ s['name'] }}</option>
+        {% else %}
+          <option value="{{ s['id'] }}">{{ s['name'] }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+  </label><br>
+  <label>Due date <input name="due_date" type="date" value="{{ (form.get('due_date') if form else task['due_date']) }}" required></label><br>
+  <label>Required time (hours) <input name="required_time" type="number" step="0.25" value="{{ (form.get('required_time') if form else task['required_time']) }}" required></label><br>
+  <label>Priority weight (1-5) <input name="priority_weight" type="number" min="1" max="5" value="{{ (form.get('priority_weight') if form else task['priority_weight']) }}" required></label><br>
+  <div class="form-actions" style="margin-top:12px; display:flex; gap:12px;">
+    <button type="submit" class="btn btn-primary">Update Task</button>
+    <a href="{{ url_for('main_schedule_view') }}" class="btn link-cancel">Cancel</a>
+  </div>
+</form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const formEl = document.querySelector('form');
+    const requiredTimeEl = document.querySelector('input[name="required_time"]');
+
+    function showBannerFlash(message) {
+      const header = document.querySelector('header');
+      if (!header) {
+        alert(message);
+        return;
+      }
+      let ul = header.querySelector('ul.flashes');
+      if (!ul) {
+        ul = document.createElement('ul');
+        ul.className = 'flashes';
+        header.appendChild(ul);
+      }
+      const li = document.createElement('li');
+      li.className = 'error';
+      li.textContent = message;
+      ul.appendChild(li);
+      setTimeout(() => {
+        try { li.remove(); } catch(e) {}
+        if (ul && ul.children.length === 0) {
+          try { ul.remove(); } catch(e) {}
+        }
+      }, 3500);
+    }
+
+    if (formEl) {
+      formEl.addEventListener('submit', function(e) {
+        const req = requiredTimeEl ? parseFloat(requiredTimeEl.value) : NaN;
+        if (!isFinite(req) || req <= 0) {
+          e.preventDefault();
+          showBannerFlash('Required time cannot be zero');
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

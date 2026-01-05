@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study Planner</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1 class="logo">📚 Study Planner</h1>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('subjects_view') }}" class="nav-item {% if request.endpoint == 'subjects_view' %}active{% endif %}">
+          <span class="nav-icon">📖</span>
+          <span class="nav-label">Subject Notes</span>
+        </a>
+        <a href="{{ url_for('main_schedule_view') }}" class="nav-item {% if request.endpoint == 'main_schedule_view' %}active{% endif %}">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Schedule</span>
+        </a>
+        <a href="{{ url_for('weekly_progress_view') }}" class="nav-item {% if request.endpoint == 'weekly_progress_view' %}active{% endif %}">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Progress</span>
+        </a>
+        <a href="{{ url_for('settings_view') }}" class="nav-item {% if request.endpoint == 'settings_view' %}active{% endif %}">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="header">
+        <h1>Study Planner</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="flashes">
+            {% for category, msg in messages %}
+              <li class="{{ category }}">{{ msg }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+      </header>
+
+      <!-- Page Content -->
+      <div class="content-wrapper">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <footer>
+  </footer>
+
+  <script>
+    // Page UI behavior
+    document.addEventListener('DOMContentLoaded', function() {
+      // Progress bar animation
+      const progressFills = document.querySelectorAll('.progress-fill');
+      progressFills.forEach(fill => {
+        const width = fill.getAttribute('data-width') || 0;
+        setTimeout(() => {
+          fill.style.width = width + '%';
+        }, 100);
+      });
+
+      // Auto-dismiss flash messages
+      const flashes = document.querySelector('header .flashes');
+      if (flashes) {
+        setTimeout(() => {
+          flashes.remove();
+        }, 3500);
+      }
+    });
+  </script>
+</body>
+</html>

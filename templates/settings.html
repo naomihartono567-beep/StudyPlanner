@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="settings-container">
+  <!-- Settings Header -->
+  <div class="settings-header">
+    <h2>⚙️ Settings & Profile</h2>
+    <p class="settings-subtitle">Manage your account preferences and data</p>
+  </div>
+
+  <!-- Profile Section -->
+  <section class="settings-section profile-section">
+    <div class="section-header">
+      <h3>👤 Profile Information</h3>
+    </div>
+    <div class="profile-info">
+      <div class="info-item">
+        <span class="info-label">Username</span>
+        <span class="info-value">{{ user_info.get('username', 'User') }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">User ID</span>
+        <span class="info-value">{{ user_info.get('user_id', 'N/A') }}</span>
+      </div>
+    </div>
+    <a href="#" class="btn btn-primary btn-sm">✏️ Edit Profile</a>
+  </section>
+
+  <!-- Notifications Section -->
+  <section class="settings-section notifications-section">
+    <div class="section-header">
+      <h3>🔔 Notifications & Alerts</h3>
+      <p class="section-desc">Control how and when we send you reminders</p>
+    </div>
+    
+    <div class="toggle-item">
+      <div class="toggle-content">
+        <p class="toggle-label">Task Reminders</p>
+        <span class="toggle-desc">Get notified about upcoming tasks and deadlines</span>
+      </div>
+      <div class="toggle-buttons">
+        <button class="toggle-btn active" data-setting="reminders" data-value="true">✓ On</button>
+        <button class="toggle-btn" data-setting="reminders" data-value="false">✗ Off</button>
+      </div>
+    </div>
+
+    <div class="toggle-item">
+      <div class="toggle-content">
+        <p class="toggle-label">Weekly Report Digest</p>
+        <span class="toggle-desc">Receive a summary of your progress every Sunday</span>
+      </div>
+      <div class="toggle-buttons">
+        <button class="toggle-btn active" data-setting="weekly_digest" data-value="true">✓ On</button>
+        <button class="toggle-btn" data-setting="weekly_digest" data-value="false">✗ Off</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Management Section -->
+  <section class="settings-section danger-section">
+    <div class="section-header">
+      <h3>🗑️ Data Management</h3>
+      <p class="section-desc">These actions cannot be undone</p>
+    </div>
+    <div class="danger-actions">
+      <button class="btn btn-danger" id="reset-data-btn">🔄 Reset All Data</button>
+      <p class="danger-warning">Clicking this will delete all your tasks, subjects, and schedules.</p>
+    </div>
+  </section>
+
+  <!-- Account Section -->
+  <section class="settings-section account-section">
+    <div class="section-header">
+      <h3>🚪 Account</h3>
+    </div>
+    <form action="{{ url_for('logout') }}" method="POST" class="logout-form">
+      <button type="submit" class="btn btn-logout">Sign Out</button>
+      <p class="logout-info">You'll be logged out and redirected to the login page</p>
+    </form>
+  </section>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div id="resetModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>⚠️ Reset All Data?</h3>
+      <button class="modal-close" id="closeModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>This action will <strong>permanently delete</strong>:</p>
+      <ul>
+        <li>All your tasks</li>
+        <li>All your subjects</li>
+        <li>All your schedules</li>
+        <li>All your progress history</li>
+      </ul>
+      <p style="color: #ff6b6b; font-weight: bold; margin-top: 20px;">This cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="cancelReset">Cancel</button>
+      <button class="btn btn-danger" id="confirmReset">Yes, Delete Everything</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .settings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .settings-header {
+    text-align: center;
+    padding: 30px 25px;
+    background:linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 8px;
+    color: white;
+  }
+
+  .settings-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 2rem;
+    color: white;
+  }
+
+  .settings-subtitle {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.95;
+    color: white;
+  }
+
+  .settings-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  .settings-section:hover {
+    border-color:var(--accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .section-header {
+    margin-bottom: 20px;
+  }
+
+  .section-header h3 {
+    margin: 0 0 5px 0;
+    color:var(--primary);
+    font-size: 1.3rem;
+    font-weight:bold;
+  }
+
+  .section-desc {
+    margin: 5px 0 0 0;
+    color:var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  /* Profile Section */
+  .profile-section {
+    border-left: 4px solid var(--accent);
+  }
+
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background:linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(52, 152, 219, 0.02));
+    border-radius: 8px;
+    border: 1px solid var(--border);
+
+    transition: all 0.2s ease;
+  }
+
+  .info-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(189, 224, 254, 0.3);
+  }
+
+  .info-label {
+    font-weight: bold;
+    color:var(--text-primary);
+    font-size: 0.95rem;
+  }
+
+  .info-value {
+    color:var(--text-primary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    background: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .btn-sm {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  /* Notifications Section */
+  .notifications-section {
+    border-left: 4px solid var(--warning);
+  }
+
+  .toggle-item {
+    margin: 20px 0;
+    padding: 18px;
+    background: rgba(255, 249, 196, 0.3);
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px solid rgba(255, 249, 196, 0.6);
+    transition: all 0.2s ease;
+  }
+
+  .toggle-item:hover {
+    border-color: var(--pastel-yellow);
+    background: rgba(255, 249, 196, 0.5);
+  }
+
+  .toggle-content {
+    flex: 1;
+  }
+
+  .toggle-label {
+    margin: 0;
+    font-weight: bold;
+    color:var(--text-primary);
+    font-size: 1rem;
+  }
+
+  .toggle-desc {
+    display: block;
+    margin-top: 5px;
+    color:var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .toggle-buttons {
+    display: flex;
+    gap: 10px;
+    margin-left: 20px;
+  }
+
+  .toggle-btn {
+    padding: 8px 16px;
+    border: 2px solid var(--border);
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: bold;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color:var(--text-primary);
+  }
+
+  .toggle-btn.active {
+    background:var(--success);
+    border-color:var(--success);
+    color: white;
+  }
+
+  .toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Danger Section */
+  .danger-section {
+    border-left: 5px solid #ff6b6b;
+  }
+
+  .danger-actions {
+    margin-top: 20px;
+  }
+
+  .danger-warning {
+    margin-top: 15px;
+    padding: 12px;
+    background: rgba(255, 107, 107, 0.1);
+    border-left: 4px solid #ff6b6b;
+    color: #8b3b3b;
+    font-size: 0.9rem;
+    border-radius: 8px;
+  }
+
+  /* Account Section */
+  .account-section {
+    border-left: 5px solid var(--pastel-blue);
+  }
+
+  .logout-form {
+    margin-top: 20px;
+  }
+
+  .logout-info {
+    margin-top: 15px;
+    color: #8a7c9e;
+    font-size: 0.9rem;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    display: inline-block;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--pastel-green);
+    color: #2b2b2b;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(216, 243, 220, 0.4);
+  }
+
+  .btn-danger {
+    background: #ffd8b5;
+    color: #8b4513;
+  }
+
+  .btn-danger:hover {
+    background: #ffcca5;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(255, 216, 181, 0.4);
+  }
+
+  .btn-secondary {
+    background: var(--pastel-orange);
+    color: #3f3f3f;
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(255, 216, 181, 0.4);
+  }
+
+  .btn-logout {
+    width: 100%;
+    background: #f0e6ff;
+    color: #5a4a6b;
+    font-weight: bold;
+    border: none;
+    box-shadow: 0 2px 6px rgba(216, 198, 255, 0.3);
+  }
+
+  .btn-logout:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(216, 198, 255, 0.5);
+    background: #e3d4ff;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-content {
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 450px;
+    width: 90%;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    padding: 25px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    color: #ff6b6b;
+    font-size: 1.3rem;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.2s ease;
+  }
+
+  .modal-close:hover {
+    color: #333;
+  }
+
+  .modal-body {
+    padding: 25px;
+  }
+
+  .modal-body p {
+    margin: 0 0 15px 0;
+    line-height: 1.6;
+  }
+
+  .modal-body ul {
+    margin: 15px 0;
+    padding-left: 20px;
+  }
+
+  .modal-body li {
+    margin: 8px 0;
+    color: #3f3f3f;
+  }
+
+  .modal-footer {
+    padding: 20px 25px;
+    border-top: 2px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  .modal-footer .btn {
+    margin: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .toggle-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .toggle-buttons {
+      width: 100%;
+      margin-left: 0;
+    }
+
+    .info-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .modal-footer {
+      flex-direction: column-reverse;
+    }
+
+    .modal-footer .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  // Toggle button functionality
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const parent = this.parentElement;
+      const active = parent.querySelector('.toggle-btn.active');
+      if (active) active.classList.remove('active');
+      this.classList.add('active');
+      console.log(`Setting ${this.dataset.setting} to ${this.dataset.value}`);
+    });
+  });
+
+  // Reset data modal functionality
+  const resetBtn = document.getElementById('reset-data-btn');
+  const modal = document.getElementById('resetModal');
+  const closeBtn = document.getElementById('closeModal');
+  const cancelBtn = document.getElementById('cancelReset');
+  const confirmBtn = document.getElementById('confirmReset');
+
+  resetBtn.addEventListener('click', function() {
+    modal.classList.add('show');
+  });
+
+  closeBtn.addEventListener('click', function() {
+    modal.classList.remove('show');
+  });
+
+  cancelBtn.addEventListener('click', function() {
+    modal.classList.remove('show');
+  });
+
+  modal.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      modal.classList.remove('show');
+    }
+  });
+
+  confirmBtn.addEventListener('click', function() {
+    // Submit a POST form to the backend route that resets the user's data
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{{ url_for('reset_data_view') }}";
+    // Add a CSRF token input here if you add CSRF protection later
+    document.body.appendChild(form);
+    form.submit();
+    modal.classList.remove('show');
+  });
+</script>
+{% endblock %}

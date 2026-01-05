@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="add-subject-container">
+  <h2>➕ Add Subject</h2>
+
+  <form method="POST" class="subject-form">
+    <div class="form-group">
+      <label for="name">Subject Name *</label>
+      <input type="text" id="name" name="name" required placeholder="e.g., Biology, History, Chemistry">
+    </div>
+
+    <div class="form-group">
+      <label for="teacher">Teacher Name (optional)</label>
+      <input type="text" id="teacher" name="teacher" placeholder="e.g., Mrs. Smith">
+    </div>
+
+    <div class="form-group">
+      <label>Color Tag</label>
+      <div class="color-selector">
+        <input type="hidden" id="color_tag" name="color_tag" value="#bde0fe">
+        <button type="button" class="color-option" data-color="#bde0fe" title="Blue" data-color-name="blue">
+          <span class="color-swatch" style="background-color: #bde0fe;"></span>
+          <span>Blue</span>
+        </button>
+        <button type="button" class="color-option" data-color="#d8f3dc" title="Green" data-color-name="green">
+          <span class="color-swatch" style="background-color: #d8f3dc;"></span>
+          <span>Green</span>
+        </button>
+        <button type="button" class="color-option" data-color="#fff9c4" title="Yellow" data-color-name="yellow">
+          <span class="color-swatch" style="background-color: #fff9c4;"></span>
+          <span>Yellow</span>
+        </button>
+        <button type="button" class="color-option" data-color="#ffdde2" title="Pink" data-color-name="pink">
+          <span class="color-swatch" style="background-color: #ffdde2;"></span>
+          <span>Pink</span>
+        </button>
+        <button type="button" class="color-option" data-color="#ffd8b5" title="Orange" data-color-name="orange">
+          <span class="color-swatch" style="background-color: #ffd8b5;"></span>
+          <span>Orange</span>
+        </button>
+        <button type="button" class="color-option" data-color="#e9d5ff" title="Purple" data-color-name="purple">
+          <span class="color-swatch" style="background-color: #e9d5ff;"></span>
+          <span>Purple</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="short_note">Short Note</label>
+      <textarea id="short_note" name="short_note" rows="3" placeholder="Quick overview (e.g., what you're doing in class right now)"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="key_topics">Syllabus / Key Concepts</label>
+      <textarea id="key_topics" name="key_topics" rows="8" placeholder="Syllabus overview, key units, important concepts, exam topics..."></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save Subject</button>
+      <button type="button" onclick="history.back();" class="btn link-cancel">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<style>
+  .add-subject-container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .add-subject-container h2 {
+    color: #4b3b6b;
+    margin-bottom: 25px;
+  }
+
+  .subject-form {
+    background: rgba(255,255,255,0.6);
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .form-group {
+    margin-bottom: 25px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #3f3f3f;
+    font-size: 1rem;
+  }
+
+  .form-group input[type="text"],
+  .form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 10px;
+    font-family: 'Handlee', cursive;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .form-group input[type="text"]:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--pastel-green);
+    box-shadow: 0 0 0 3px rgba(216, 243, 220, 0.3);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+  }
+
+  .color-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+  }
+
+  .color-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 2px solid rgba(0,0,0,0.1);
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    /* ensure text is readable (avoid white-on-pastel) */
+    color: #3f3f3f;
+  }
+
+  /* Make the label text itself match the color name */
+  .color-option[data-color-name="blue"] span:last-child { color: #2c4a8d; }
+  .color-option[data-color-name="green"] span:last-child { color: #1f6b47; }
+  .color-option[data-color-name="yellow"] span:last-child { color: #7a5a00; }
+  .color-option[data-color-name="pink"] span:last-child { color: #8b3b4b; }
+  .color-option[data-color-name="orange"] span:last-child { color: #8a4b12; }
+  .color-option[data-color-name="purple"] span:last-child { color: #5a3b8b; }
+
+  .color-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .color-option.active {
+    /* Medium gray border (not black) */
+    border-color: rgba(0,0,0,0.35);
+    /* Glow color is set dynamically from the selected swatch */
+    box-shadow: 0 0 0 3px var(--active-glow, rgba(0,0,0,0.12));
+    background: #f5f5f5;
+  }
+
+  .color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  /* Use global button styles from static/style.css to keep buttons consistent */
+</style>
+
+<script>
+  const colorInput = document.getElementById('color_tag');
+  const colorOptions = document.querySelectorAll('.color-option');
+
+  // Set initial active state
+  const initialColor = colorInput.value;
+  const activeBtn = document.querySelector(`[data-color="${initialColor}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+    activeBtn.style.setProperty('--active-glow', hexToRgba(initialColor, 0.55));
+  }
+
+  function hexToRgba(hex, alpha) {
+    const h = (hex || '').replace('#', '').trim();
+    if (h.length !== 6) return `rgba(0,0,0,${alpha})`;
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  // Handle color selection
+  colorOptions.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      colorOptions.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      colorInput.value = btn.getAttribute('data-color');
+
+      const chosen = colorInput.value;
+      btn.style.setProperty('--active-glow', hexToRgba(chosen, 0.55));
+    });
+  });
+</script>
+{% endblock %}

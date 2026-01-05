@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome — Study Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, var(--primary), var(--secondary)); padding:12px 16px;">
+    <div class="container" style="max-width:640px; text-align:center; background: transparent; border: none; box-shadow: none; padding:12px;">
+  <h1 style="font-size:48px; line-height:1; margin:0 0 8px 0; color: #ffffff;">📚 Study Planner</h1>
+      <p class="muted" style="margin:0 0 12px 0; color: rgba(255,255,255,0.92);">Plan your week, track progress, and stay on top of tasks.</p>
+
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+        <a href="{{ url_for('signup') }}" class="pill-btn" style="background:linear-gradient(135deg,#7ec8e3,#9ad0f5); border-color:transparent; padding:10px 16px; color:#0a1a2b;">Sign Up</a>
+        <a href="{{ url_for('login') }}" class="pill-btn" style="background:linear-gradient(135deg,#9ad0f5,#8fb3f7); border-color:transparent; padding:10px 16px; color:#0a1a2b;">Login</a>
+      </div>
+
+      <p style="margin-top:12px; color:var(--text-secondary);">New here? Sign Up — Returning user? Login.</p>
+    </div>
+  </div>
+
+</body>
+</html>

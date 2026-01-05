@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="subjects-container">
+  <div class="subjects-header">
+    <h2>📚 Subject Notes & Resources</h2>
+    <a href="{{ url_for('add_subject') }}" class="btn btn-primary">+ Add Subject</a>
+  </div>
+
+
+
+  {% if subjects %}
+    <div class="subjects-grid">
+      {% for s in subjects %}
+        <div class="subject-card" data-color="{{ s.color_tag or '#bde0fe' }}">
+          <div class="card-header">
+            <h3 class="subject-name">{{ s.name }}</h3>
+            <div class="color-dot" data-bg-color="{{ s.color_tag or '#bde0fe' }}"></div>
+          </div>
+
+          {% if s.teacher %}
+            <p class="teacher-name">👨‍🏫 {{ s.teacher }}</p>
+          {% endif %}
+
+          {% set preview = (s.short_note or s.key_topics or s.notes or '') %}
+          {% if preview %}
+            <p class="notes-preview">{{ preview[:150] }}{% if preview|length > 150 %}...{% endif %}</p>
+          {% else %}
+            <p class="notes-preview muted">No notes yet</p>
+          {% endif %}
+
+          <div class="card-footer">
+            <a href="{{ url_for('subject_detail', subject_id=s.id) }}" class="btn btn-small btn-secondary">View</a>
+            <a href="{{ url_for('edit_subject', subject_id=s.id) }}" class="btn btn-small btn-secondary">Edit</a>
+            <button class="btn btn-small btn-danger btn-icon delete-btn" data-subject-id="{{ s.id }}" data-subject-name="{{ s.name }}" title="Delete">🗑️</button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No subjects yet</p>
+      <a href="{{ url_for('add_subject') }}" class="btn btn-primary">Create your first subject</a>
+    </div>
+  {% endif %}
+</div>
+
+<style>
+  .subjects-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .subjects-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 3px dashed rgba(0,0,0,0.1);
+  }
+
+  .subjects-header h2 {
+    margin: 0;
+    color: #4b3b6b;
+    font-size: 1.8rem;
+  }
+
+  .subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .subject-card {
+    background: white;
+    border: 3px solid #bde0fe;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+
+  .subject-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-color: #8b7b9b;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .subject-name {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #3f3f3f;
+    flex: 1;
+    word-break: break-word;
+  }
+
+  .color-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .teacher-name {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .notes-preview {
+    margin: 12px 0;
+    padding: 12px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #5f5f5f;
+    line-height: 1.4;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .notes-preview.muted {
+    background: rgba(0,0,0,0.05);
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .card-footer {
+    display: flex;
+    gap: 6px;
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 2px dashed rgba(0,0,0,0.08);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .card-footer .delete-btn {
+    margin-left: auto;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.9rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--pastel-green), #c8edcf);
+    color: #165a2d;
+    border: 2px solid #9fd8b6;
+    box-shadow: 0 2px 6px rgba(159, 216, 182, 0.25);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.12);
+  }
+
+  .btn-small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-width: 72px;
+    text-align: center;
+  }
+
+  .btn-icon {
+    min-width: 34px;
+    padding: 5px 7px;
+    line-height: 1;
+    border-radius: 999px;
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, var(--pastel-blue), #d0e9ff);
+    color: #08345d;
+    /* remove visible border/outline while keeping the colored background */
+    border: none;
+    box-shadow: 0 6px 14px rgba(106,163,230,0.08);
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.12);
+  }
+
+  .btn-secondary:focus {
+    outline: none;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.14);
+  }
+
+  .btn-danger {
+    background: #ffb3ba;
+    color: #8b3b4b;
+  }
+
+  .btn-danger:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .empty-state p {
+    font-size: 1.3rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+</style>
+
+<script>
+  // Apply color backgrounds dynamically
+  document.querySelectorAll('[data-bg-color]').forEach(el => {
+    el.style.backgroundColor = el.getAttribute('data-bg-color');
+  });
+
+  // Apply color borders dynamically
+  document.querySelectorAll('[data-color]').forEach(el => {
+    el.style.borderColor = el.getAttribute('data-color');
+  });
+
+  // Delete subject handler
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const subjectId = this.getAttribute('data-subject-id');
+      const subjectName = this.getAttribute('data-subject-name');
+      if (confirm(`Delete "${subjectName}"? This will also delete all its tasks.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/subject/${subjectId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+</script>
+{% endblock %}

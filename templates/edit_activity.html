@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Activity</h2>
+
+<form id="edit-activity-form" method="post">
+  <label>Activity name <input name="activity_name" value="{{ block.get('activity_name','') }}" required></label><br>
+
+  <!-- Activity data for JavaScript (used to pre-fill the form) -->
+  <script id="edit-block-data" type="application/json">{{ block | tojson }}</script>
+
+  <label style="display:block; margin-top:14px; margin-bottom:4px;">Recurrence Pattern:</label>
+  <label style="display: block; margin-left: 20px;">
+    <input type="radio" name="recurrence_pattern" value="once" onchange="toggleForm()" {% if not block.get('is_recurring') %}checked{% endif %}> One-time activity
+  </label>
+  <label style="display: block; margin-left: 20px;">
+  <input type="radio" name="recurrence_pattern" value="weekly" onchange="toggleForm()" {% if block.get('recurrence_pattern') == 'weekly' %}checked{% endif %}> Weekly (every week)
+  </label>
+  <label style="display: block; margin-left: 20px;">
+    <input type="radio" name="recurrence_pattern" value="biweekly" onchange="toggleForm()" {% if block.get('recurrence_pattern') == 'biweekly' %}checked{% endif %}> Biweekly (every other week)
+  </label>
+
+  <!-- One-time date picker (shown for 'once') -->
+  <div id="one_time_block" style="margin-top:8px;">
+    <label style="display:block;">Date:</label>
+    <input type="date" name="one_time_date" id="one_time_date" value="{{ block.get('start_time','')[:10] }}">
+  </div>
+
+  <!-- Recurrence period and weekday selection (shown for weekly/biweekly) -->
+  <div id="recurrence_block" style="display:none; margin-top:12px; padding:10px; background:#f8f9fa; border-radius:6px; border-left:4px solid var(--accent);">
+    <p style="margin:0 0 8px 0;"><strong>Recurrence Period</strong></p>
+    <label>Start creating from: <input name="recurrence_start_date" type="date" id="recurrence_start" value="{{ block.get('recurrence_start_date') or block.get('recurrence_start') or block.get('start_time','')[:10] }}"></label><br>
+    <label>Stop creating after: <input name="recurrence_end_date" type="date" id="recurrence_end" value="{{ block.get('recurrence_end_date') or block.get('recurrence_end') or '' }}"></label><br>
+
+  <p style="margin:8px 0 4px 0;"><strong>Days</strong> (choose which days the activity occurs)</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <label><input type="checkbox" name="days" value="0"> Mon</label>
+      <label><input type="checkbox" name="days" value="1"> Tue</label>
+      <label><input type="checkbox" name="days" value="2"> Wed</label>
+      <label><input type="checkbox" name="days" value="3"> Thu</label>
+      <label><input type="checkbox" name="days" value="4"> Fri</label>
+      <label><input type="checkbox" name="days" value="5"> Sat</label>
+      <label><input type="checkbox" name="days" value="6"> Sun</label>
+    </div>
+  </div>
+
+  <!-- Time inputs used by both modes -->
+  <div style="margin-top:12px;">
+    <label style="display:block;">Start time:</label>
+    <input type="time" name="start_time_only" id="start_time_only" required value="{{ block.get('start_time','')[11:16] if block.get('start_time') }}">
+
+    <label style="display:block;">End time:</label>
+    <input type="time" name="end_time_only" id="end_time_only" required value="{{ block.get('end_time','')[11:16] if block.get('end_time') }}">
+  </div>
+
+  <label style="display:block; margin-top:18px;">Notes</label>
+  <textarea name="notes" rows="4" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">{{ block.get('notes','') }}</textarea>
+
+  <!-- Hidden inputs for server parsing -->
+  <input type="hidden" name="start_time" id="hidden_start_time">
+  <input type="hidden" name="end_time" id="hidden_end_time">
+
+  {% if block.get('is_recurring') %}
+    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid var(--accent);">
+      <p style="margin-top: 0; color: #2c3e50;"><strong>This is a recurring activity</strong></p>
+      <p style="margin:6px 0 0 0; color:#34495e;">Edits will be applied to <strong>all occurrences</strong> of this activity.</p>
+    </div>
+    <input type="hidden" name="update_choice" value="all">
+  {% endif %}
+
+  <div style="margin-top: 20px; display:flex; gap:12px;">
+    <button type="submit" class="btn btn-primary">Update Activity</button>
+    <button type="button" onclick="history.back();" class="link-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+function toggleForm(){
+  const pattern = document.querySelector('input[name="recurrence_pattern"]:checked').value;
+  const rec = document.getElementById('recurrence_block');
+  const one = document.getElementById('one_time_block');
+  if(pattern === 'weekly' || pattern === 'biweekly'){
+    rec.style.display = 'block';
+    one.style.display = 'none';
+  } else {
+    rec.style.display = 'none';
+    one.style.display = 'block';
+  }
+}
+
+// Initialize form values
+(function(){
+  toggleForm();
+    // Parse activity JSON
+    const EDIT_BLOCK = (function(){
+      try{
+        const node = document.getElementById('edit-block-data');
+        if(node && node.textContent) return JSON.parse(node.textContent);
+      }catch(e){ /* ignore parse errors */ }
+      return {};
+    })();
+
+    // Hidden ISO date-time values sent to the server
+    try{
+      const hiddenStart = document.getElementById('hidden_start_time');
+      const hiddenEnd = document.getElementById('hidden_end_time');
+      if(hiddenStart) hiddenStart.value = EDIT_BLOCK.start_time || '';
+      if(hiddenEnd) hiddenEnd.value = EDIT_BLOCK.end_time || '';
+    }catch(e){ /* ignore in older browsers */ }
+
+  // Populate selected weekdays
+  var existing = EDIT_BLOCK.selected_days || null;
+  if(existing && Array.isArray(existing)){
+    Array.from(document.querySelectorAll('input[name="days"]')).forEach(cb=>{
+      if(existing.includes(parseInt(cb.value))) cb.checked = true;
+    });
+  } else {
+  // Fallback: map day name to checkbox
+    const name = EDIT_BLOCK.day_of_week || '';
+    const map = { 'Mon':0,'Tue':1,'Wed':2,'Thu':3,'Fri':4,'Sat':5,'Sun':6, 'Monday':0,'Tuesday':1,'Wednesday':2,'Thursday':3,'Friday':4,'Saturday':5,'Sunday':6 };
+    if(name && map[name] !== undefined){
+      const selector = document.querySelector('input[name="days"][value="'+map[name]+'"]');
+      if(selector) selector.checked = true;
+    }
+  }
+
+  // Set hidden ISO values on load
+  const st = document.getElementById('start_time_only').value;
+  const et = document.getElementById('end_time_only').value;
+  if(st && et){
+    if(document.querySelector('input[name="recurrence_pattern"]:checked').value === 'once'){
+  const date = document.getElementById('one_time_date').value || (EDIT_BLOCK.start_time ? EDIT_BLOCK.start_time.slice(0,10) : '');
+  document.getElementById('hidden_start_time').value = date + 'T' + st;
+  document.getElementById('hidden_end_time').value = date + 'T' + et;
+    } else {
+  const seed = document.getElementById('recurrence_start').value || (EDIT_BLOCK.recurrence_start_date || (EDIT_BLOCK.start_time ? EDIT_BLOCK.start_time.slice(0,10) : ''));
+  document.getElementById('hidden_start_time').value = seed + 'T' + st;
+  document.getElementById('hidden_end_time').value = seed + 'T' + et;
+    }
+  }
+
+  // On submit, rebuild hidden ISO values
+  document.getElementById('edit-activity-form').addEventListener('submit', function(e){
+    const pattern = document.querySelector('input[name="recurrence_pattern"]:checked').value;
+    const startTime = document.getElementById('start_time_only').value;
+    const endTime = document.getElementById('end_time_only').value;
+    if(!startTime || !endTime){ alert('Please provide start and end times'); e.preventDefault(); return; }
+
+    if(pattern === 'once'){
+      const oneDate = document.getElementById('one_time_date').value;
+      if(!oneDate){ alert('Please select a date for the one-time activity'); e.preventDefault(); return; }
+      document.getElementById('hidden_start_time').value = oneDate + 'T' + startTime;
+      document.getElementById('hidden_end_time').value = oneDate + 'T' + endTime;
+      return;
+    }
+
+    const rs = document.getElementById('recurrence_start').value;
+    const selected = Array.from(document.querySelectorAll('input[name="days"]:checked')).map(n=>parseInt(n.value));
+    if(!rs || !document.getElementById('recurrence_end').value){ alert('Please provide recurrence start/end dates'); e.preventDefault(); return; }
+    const startDate = new Date(rs + 'T00:00:00');
+    let seedDate = null;
+    if(selected.length === 0){ seedDate = startDate; }
+    else {
+      let d = new Date(startDate);
+      for(let i=0;i<14;i++){
+        const jsDay = d.getDay();
+        const ourDay = jsDay === 0 ? 6 : jsDay - 1;
+        if(selected.includes(ourDay)){ seedDate = new Date(d); break; }
+        d.setDate(d.getDate()+1);
+      }
+      if(!seedDate) seedDate = startDate;
+    }
+    const pad = (n)=> n.toString().padStart(2,'0');
+    const isoDate = seedDate.getFullYear() + '-' + pad(seedDate.getMonth()+1) + '-' + pad(seedDate.getDate());
+    document.getElementById('hidden_start_time').value = isoDate + 'T' + startTime;
+    document.getElementById('hidden_end_time').value = isoDate + 'T' + endTime;
+  });
+})();
+</script>
+{% endblock %}

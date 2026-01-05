@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="progress-container">
+  <div class="progress-header">
+    <h2>📊 Progress Tracker</h2>
+    {% if report_period %}
+      <p class="report-period">Current Week: {{ report_period.start_date }} - {{ report_period.end_date }}</p>
+    {% endif %}
+    <div class="progress-stats">
+      <div class="stat-card">
+        <span class="stat-label">Tasks Completed</span>
+        <span class="stat-value">{{ completed_tasks }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Pending</span>
+        <span class="stat-value">{{ total_tasks }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overall Progress Section -->
+  <section class="overall-progress-section">
+    <h3>Overall Progress</h3>
+    <div class="progress-bar-container">
+      <div class="progress-bar">
+        <div class="progress-fill" data-width="{{ progress_percentage }}"></div>
+      </div>
+      <p class="progress-text">{{ progress_percentage }}% Complete ({{ completed_tasks }} of {{ completed_tasks + total_tasks }} tasks)</p>
+    </div>
+  </section>
+
+  <!-- Weekly Summary Statistics -->
+  {% if weekly_summary %}
+  <section class="weekly-summary-section">
+    <h3>📈 This Week's Summary</h3>
+    <div class="stats-grid">
+      <div class="stat-box completed-stat">
+        <p class="stat-number">{{ weekly_summary.completed_count }}</p>
+        <p class="stat-label">Completed</p>
+      </div>
+      <div class="stat-box pending-stat">
+        <p class="stat-number">{{ weekly_summary.pending_count }}</p>
+        <p class="stat-label">Pending</p>
+      </div>
+      <div class="stat-box missed-stat">
+        <p class="stat-number">{{ weekly_summary.missed_count }}</p>
+        <p class="stat-label">Missed</p>
+      </div>
+      <div class="stat-box rate-stat">
+        <p class="stat-number">{{ weekly_summary.completion_rate }}<span class="percent">%</span></p>
+        <p class="stat-label">Completion Rate</p>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Completed Tasks Section -->
+  {% if completed_tasks_list %}
+  <section class="report-section completed-section">
+    <h3>✅ Completed Tasks ({{ weekly_summary.completed_count }})</h3>
+    {% if completed_tasks_list %}
+      <div class="tasks-list">
+        {% for task in completed_tasks_list %}
+          <div class="report-task-item completed">
+            <div class="task-info">
+              <p class="task-name">{{ task.name }}</p>
+              <p class="task-meta">📚 {{ task.subject }}</p>
+            </div>
+            <span class="status-badge">✓ Done</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No completed tasks this week</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <!-- Missed Tasks Section -->
+  {% if missed_tasks %}
+  <section class="report-section missed-section">
+    <h3>❌ Missed Tasks ({{ weekly_summary.missed_count }})</h3>
+    {% if missed_tasks %}
+      <div class="tasks-list">
+        {% for task in missed_tasks %}
+          <div class="report-task-item missed">
+            <div class="task-info">
+              <p class="task-name">{{ task.name }}</p>
+              <p class="task-meta">⚠️ Was Due: {{ task.due_date }} | 📚 {{ task.subject }}</p>
+            </div>
+            <span class="status-badge">✗ Missed</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No missed tasks this week</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <!-- Pending Tasks Section -->
+  <section class="upcoming-section">
+    <h3>⏳ Pending Tasks</h3>
+    {% if pending_tasks %}
+      <div class="tasks-list">
+        {% for task in pending_tasks %}
+          <div class="report-task-item pending">
+            <div class="task-info">
+              <p class="task-name">{{ task.name }}</p>
+              <p class="task-meta">📅 Due: {{ task.due_date }} | 📚 {{ task.subject }}</p>
+            </div>
+            <span class="status-badge">In Progress</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">No pending tasks this week</p>
+    {% endif %}
+  </section>
+
+  <!-- Upcoming Tasks Section -->
+  <section class="upcoming-tasks-section">
+    <h3>📋 Next Up (Next 5)</h3>
+    {% if upcoming_tasks %}
+      <div class="tasks-list">
+        {% for task in upcoming_tasks %}
+          <div class="task-item">
+            <div class="task-header">
+              <p class="task-name">{{ task.name }}</p>
+              <span class="task-time-badge">⏱️ {{ task.required_time }}h</span>
+            </div>
+            <p class="task-date">📅 Due: {{ task.due_date }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-message">
+        <p>🎉 No upcoming tasks! Great work!</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Subject Breakdown Section -->
+  <section class="breakdown-section">
+    <h3>📚 Subject Breakdown</h3>
+    {% if subject_breakdown %}
+      <div class="subject-breakdown-grid">
+        {% for subject in subject_breakdown %}
+          <div class="subject-card" data-color="{{ subject.color_tag }}">
+            <div class="card-top">
+              <h4 class="subject-name">{{ subject.name }}</h4>
+              <div class="color-indicator" data-bg-color="{{ subject.color_tag }}"></div>
+            </div>
+            
+            {% if subject.teacher %}
+              <p class="teacher-info">👨‍🏫 {{ subject.teacher }}</p>
+            {% endif %}
+
+            <div class="subject-metrics">
+              <div class="metric">
+                <span class="metric-icon">📝</span>
+                <span class="metric-text">{{ subject.tasks_remaining }} Task{{ 's' if subject.tasks_remaining != 1 else '' }}</span>
+              </div>
+              <div class="metric">
+                <span class="metric-icon">⏱️</span>
+                <span class="metric-text">{{ subject.hours_remaining }}h Study</span>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-message">
+        <p>📭 No subjects yet. <a href="{{ url_for('add_subject') }}">Create one</a> to get started!</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Weekly Report Access -->
+  <section class="action-section">
+    <a href="{{ url_for('weekly_report_view') }}" class="btn btn-primary">📈 View Last Week's Report</a>
+  </section>
+</div>
+
+<style>
+  .progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .progress-header {
+    padding-bottom: 20px;
+    border-bottom: 3px dashed rgba(0,0,0,0.1);
+  }
+
+  .progress-header h2 {
+    margin: 0 0 20px 0;
+    color: var(--text-primary);
+    font-size: 1.8rem;
+  }
+
+  .progress-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+  }
+
+  .stat-card {
+    background: #d4f1d4;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+
+  /* Overall Progress Section */
+  .overall-progress-section {
+    background: rgba(255,255,255,0.6);
+    padding: 25px;
+    border-radius: 15px;
+    border: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .overall-progress-section h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+  }
+
+  .progress-bar-container {
+    margin: 20px 0;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 30px;
+    background: var(--light-bg);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    border: 2px solid var(--border);
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), var(--accent));
+    border-radius: 15px;
+    transition: width 0.5s ease;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .progress-text {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+  }
+
+  /* Upcoming Tasks Section */
+  .upcoming-section {
+    background: rgba(255,255,255,0.6);
+    padding: 25px;
+    border-radius: 15px;
+    border: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .upcoming-section h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+  }
+
+  .tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .task-item {
+    padding: 15px;
+    background: #fffacd;
+    border-radius: 12px;
+    border-left: 4px solid #ffd700;
+    transition: all 0.2s ease;
+  }
+
+  .task-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  }
+
+  .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .task-name {
+    margin: 0;
+    font-weight: bold;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    flex: 1;
+  }
+
+  .task-time-badge {
+    background: white;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    white-space: nowrap;
+    color: var(--text-primary);
+  }
+
+  .task-date {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .empty-message {
+    text-align: center;
+    padding: 30px 20px;
+    color: #7f8c8d;
+    font-size: 1.1rem;
+  }
+
+  .empty-message a {
+    color: #27ae60;
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .empty-message a:hover {
+    text-decoration: underline;
+  }
+
+  /* Subject Breakdown Section */
+  .breakdown-section {
+    background: rgba(255,255,255,0.6);
+    padding: 25px;
+    border-radius: 15px;
+    border: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .breakdown-section h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+  }
+
+  .subject-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 15px;
+  }
+
+  .subject-card {
+    background: white;
+    border: 3px solid #b4d7ff;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .subject-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .subject-name {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    font-weight: bold;
+    flex: 1;
+    word-break: break-word;
+  }
+
+  .color-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  .teacher-info {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .subject-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .metric {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+  }
+
+  .metric-icon {
+    font-size: 1.2rem;
+  }
+
+  .metric-text {
+    font-weight: 500;
+  }
+
+  /* Action Section */
+  .action-section {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+  }
+
+  .btn-secondary {
+    background: #ffd4a3;
+    color: #2c3e50;
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(255, 212, 163, 0.5);
+  }
+</style>
+
+<script>
+  // Apply dynamic widths from data attributes
+  document.querySelectorAll('[data-width]').forEach(el => {
+    const raw = el.dataset.width;
+    const width = Number(raw);
+    const safeWidth = Number.isFinite(width) ? Math.max(0, Math.min(100, width)) : 0;
+    el.style.width = safeWidth + '%';
+
+    // When 0%, ensure the fill is visually empty (no shadows/rounded corners showing).
+    if (safeWidth <= 0) {
+      el.style.boxShadow = 'none';
+      el.style.borderRadius = '0';
+      el.style.overflow = 'hidden';
+    }
+  });
+
+  // Apply background colors from data attributes
+  document.querySelectorAll('[data-bg-color]').forEach(el => {
+    el.style.backgroundColor = el.getAttribute('data-bg-color');
+  });
+
+  // Apply border colors from data attributes
+  document.querySelectorAll('[data-color]').forEach(el => {
+    el.style.borderColor = el.getAttribute('data-color');
+  });
+</script>
+{% endblock %}

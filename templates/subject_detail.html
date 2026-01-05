@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ subject.name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <header>
+    <h1 style="display:inline-block">{{ subject.name }}</h1>
+    <span class="pill" data-bg="{{ subject.color_tag or '#ffd8b5' }}" style="margin-left:8px;">{{ subject.teacher or '—' }}</span>
+  </header>
+
+  <section style="margin-top:18px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <a class="link-cancel link-cancel-sm" href="{{ url_for('edit_subject', subject_id=subject.id) }}">Edit subject</a>
+      <a class="link-cancel link-cancel-sm" href="{{ url_for('subjects_view') }}">Back</a>
+    </div>
+
+    {% if subject.short_note %}
+      <div style="margin-top:16px;">
+        <h3 style="margin-bottom:8px;">💡 Short note</h3>
+        <div style="background: rgba(0,0,0,0.02); border-radius: 10px; padding: 12px;">{{ subject.short_note }}</div>
+      </div>
+    {% endif %}
+
+    {% if subject.key_topics or subject.notes %}
+      <div style="margin-top:16px;">
+        <h3 style="margin-bottom:8px;">📌 Syllabus / key concepts</h3>
+        <div style="background: rgba(0,0,0,0.02); border-radius: 10px; padding: 12px; white-space: pre-wrap;">{{ subject.key_topics or subject.notes }}</div>
+      </div>
+    {% endif %}
+  </section>
+
+  <section style="margin-top:22px;">
+    <h3>🗂️ Class notes</h3>
+    <p class="muted" style="margin-top:4px;">Create multiple notes per subject (lectures, review sheets, homework notes, etc.).</p>
+
+    <!-- Notes are linked to this subject (add/edit/delete below) -->
+    <div style="margin-top:12px;">
+      <a class="btn btn-primary" href="{{ url_for('add_subject_note', subject_id=subject.id) }}">+ Add note</a>
+    </div>
+
+    {% if notes is defined and notes %}
+      <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
+        {% for n in notes %}
+          <div style="background:white; border:1px solid var(--border); border-radius:12px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+              <div>
+                <strong>{{ n.title }}</strong>
+                <div class="muted" style="font-size:0.85rem;">Updated {{ n.updated_at }}</div>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <a class="btn btn-small btn-secondary btn-icon btn-note-action" href="{{ url_for('edit_subject_note', note_id=n.id) }}" title="Edit">✏️</a>
+                <form method="POST" action="{{ url_for('delete_subject_note', note_id=n.id) }}" style="display:inline;" onsubmit="return confirm('Delete this note?');">
+                  <button class="btn btn-small btn-danger btn-icon btn-note-action" type="submit" title="Delete">🗑️</button>
+                </form>
+              </div>
+            </div>
+            {% if n.content %}
+              <div style="margin-top:10px; white-space: pre-wrap;">{{ n.content[:400] }}{% if n.content|length > 400 %}...{% endif %}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="margin-top:12px; background: rgba(0,0,0,0.02); border-radius: 10px; padding: 12px;">
+        <span class="muted">No class notes yet.</span>
+      </div>
+    {% endif %}
+  </section>
+</div>
+<script>
+  document.querySelectorAll('[data-bg]').forEach(el => {
+    el.style.backgroundColor = el.getAttribute('data-bg');
+  });
+</script>
+
+<style>
+  .link-cancel-sm {
+    padding: 8px 14px;
+    min-width: 120px;
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+
+  /* Icon-only action button (trash) */
+  .btn-icon {
+    line-height: 1;
+    border-radius: 999px;
+  }
+
+  /* Keep note action icons the same width */
+  .btn-note-action {
+    min-width: 32px;
+  }
+
+  /* Force red styling even if other button styles cascade */
+  .btn.btn-danger.btn-icon {
+    background: #ffb3ba;
+    color: #8b3b4b;
+    border: none;
+  }
+</style>
+{% endblock %}
